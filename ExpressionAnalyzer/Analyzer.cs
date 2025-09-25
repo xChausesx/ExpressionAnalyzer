@@ -42,15 +42,17 @@ class Analyzer
 		switch (_state)
 		{
 			case State.Start:
-				if (char.IsLetter(ch)) _state = State.VariableOrFunction;
+				if (char.IsLetter(ch) || ch == '_') _state = State.VariableOrFunction;
 				else if (char.IsDigit(ch)) _state = State.Constant;
 				else if (ch == '(') { _state = State.OpenBracket; _brackets.Push('('); }
+				else if (ch == '+' || ch == '-') _state = State.UnaryOperator;
 				else _errors.Add($"❌ [{pos}] Вираз не може починатись із '{ch}'");
 				break;
 
 			case State.Constant:
 				if (char.IsDigit(ch)) { }
 				else if (ch == '.') _state = State.ConstantDot;
+				else if (char.IsLetter(ch) || ch == '_') _state = State.ConstantWithSuffix; 
 				else if (IsOperator(ch)) _state = State.Operation;
 				else if (ch == ')') { _state = State.CloseBracket; PopBracket(pos); }
 				else _errors.Add($"❌ [{pos}] Некоректний символ після числа: '{ch}'");
@@ -63,13 +65,21 @@ class Analyzer
 
 			case State.ConstantDotConstant:
 				if (char.IsDigit(ch)) { }
+				else if (char.IsLetter(ch) || ch == '_') _state = State.ConstantWithSuffix;
 				else if (IsOperator(ch)) _state = State.Operation;
 				else if (ch == ')') { _state = State.CloseBracket; PopBracket(pos); }
 				else _errors.Add($"❌ [{pos}] Некоректний символ після числа: '{ch}'");
 				break;
 
+			case State.ConstantWithSuffix:
+				if (char.IsLetter(ch) || char.IsDigit(ch) || ch == '_') { }
+				else if (IsOperator(ch)) _state = State.Operation;
+				else if (ch == ')') { _state = State.CloseBracket; PopBracket(pos); }
+				else _errors.Add($"❌ [{pos}] Некоректний символ після суфікса константи: '{ch}'");
+				break;
+
 			case State.VariableOrFunction:
-				if (char.IsLetter(ch)) { }
+				if (char.IsLetter(ch) || ch == '_' || char.IsDigit(ch)) { }
 				else if (ch == '(') { _state = State.FunctionOpenBracket; _brackets.Push('('); }
 				else if (IsOperator(ch)) _state = State.Operation;
 				else if (ch == ')') { _state = State.CloseBracket; PopBracket(pos); }
@@ -77,17 +87,19 @@ class Analyzer
 				break;
 
 			case State.FunctionOpenBracket:
-				if (char.IsLetter(ch)) _state = State.VariableOrFunction;
+				if (char.IsLetter(ch) || ch == '_') _state = State.VariableOrFunction;
 				else if (char.IsDigit(ch)) _state = State.Constant;
+				else if (ch == '(') { _state = State.OpenBracket; _brackets.Push('('); }
+				else if (ch == '+' || ch == '-') _state = State.UnaryOperator;
 				else if (ch == ')') { _state = State.CloseBracket; PopBracket(pos); }
 				else _errors.Add($"❌ [{pos}] Некоректний символ після відкриття дужки у функції: '{ch}'");
 				break;
 
 			case State.OpenBracket:
-				if (char.IsLetter(ch)) _state = State.VariableOrFunction;
+				if (char.IsLetter(ch) || ch == '_') _state = State.VariableOrFunction;
 				else if (char.IsDigit(ch)) _state = State.Constant;
 				else if (ch == '(') { _state = State.OpenBracket; _brackets.Push('('); }
-				else if (ch == '+' || ch == '-') _state = State.Operation;
+				else if (ch == '+' || ch == '-') _state = State.UnaryOperator;
 				else _errors.Add($"❌ [{pos}] Некоректний символ після '(' : '{ch}'");
 				break;
 
@@ -101,7 +113,15 @@ class Analyzer
 				if (char.IsLetter(ch)) _state = State.VariableOrFunction;
 				else if (char.IsDigit(ch)) _state = State.Constant;
 				else if (ch == '(') { _state = State.OpenBracket; _brackets.Push('('); }
+				else if (ch == '+' || ch == '-') _state = State.UnaryOperator;
 				else _errors.Add($"❌ [{pos}] Некоректний символ після оператора: '{ch}'");
+				break;
+
+			case State.UnaryOperator:
+				if (char.IsLetter(ch)) _state = State.VariableOrFunction;
+				else if (char.IsDigit(ch)) _state = State.Constant;
+				else if (ch == '(') { _state = State.OpenBracket; _brackets.Push('('); }
+				else _errors.Add($"❌ [{pos}] Після унарного оператора '+' або '-' повинен йти операнд або дужка.");
 				break;
 		}
 	}

@@ -5,16 +5,18 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-public enum State
+enum State
 {
 	Start,
-	Operation,
+	Constant,
+	ConstantDot,
+	ConstantDotConstant,
+	ConstantWithSuffix,
 	VariableOrFunction,
 	FunctionOpenBracket,
 	OpenBracket,
 	CloseBracket,
-	Constant,
-	ConstantDot,
-	ConstantDotConstant,
+	Operation,
+	UnaryOperator,
 	End
 }
