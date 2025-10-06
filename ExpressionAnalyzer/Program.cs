@@ -21,7 +21,7 @@ string[] testCases =
 				"*101*1#(t-q)(t+q)//dt - (int*)f(8t, -(k/h)A[i+6.]), exp(), ))(t-k*8.00.1/.0"
 			};
 
-for (int i = 0; i < testCases.Length; i++)
+/*for (int i = 0; i < testCases.Length; i++)
 {
 	Console.WriteLine($"Тест {i + 1}: {testCases[i]}");
 	var analyzer = new Analyzer(testCases[i]);
@@ -36,4 +36,19 @@ for (int i = 0; i < testCases.Length; i++)
 			Console.WriteLine(err);
 		Console.WriteLine();
 	}
+}*/
+
+//string expr = "-3*0+12+0+0*3+a+1*b+24+36+12+36+12*c*d/e-d*f2/cd*(a+2.2*4)";
+
+string expr = "-3*35*24*1*absdfsdfsdfsdf*0+0/2.5+2.5*1+1*ab+0*2.5+3*5*7*1*10*1 +5/1 +1*5/1 + (1+1+1+1*5*7*10) + (x*10) + 5 * (x*fin10)";
+var optimizer = new ExprOptimizer(expr);
+
+try
+{
+    string optimized = optimizer.Optimize();
+    Console.WriteLine("Оптимізований вираз: " + optimized);
+}
+catch (DivideByZeroException ex)
+{
+    Console.WriteLine("Помилка: " + ex.Message);
 }
