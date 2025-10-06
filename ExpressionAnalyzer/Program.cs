@@ -40,12 +40,12 @@ string[] testCases =
 
 //string expr = "-3*0+12+0+0*3+a+1*b+24+36+12+36+12*c*d/e-d*f2/cd*(a+2.2*4)";
 
-string expr = "-3*35*24*1*absdfsdfsdfsdf*0+0/2.5+2.5*1+1*ab+0*2.5+3*5*7*1*10*1 +5/1 +1*5/1 + (1+1+1+1*5*7*10) + (x*10) + 5 * (x*fin10)";
+string expr = "(a+b+5)*2+0*(0/5-(6+3+d))";
 var optimizer = new ExprOptimizer(expr);
 
 try
 {
-    string optimized = optimizer.Optimize();
+    string optimized = optimizer.Optimize(false);
     Console.WriteLine("Оптимізований вираз: " + optimized);
 }
 catch (DivideByZeroException ex)
