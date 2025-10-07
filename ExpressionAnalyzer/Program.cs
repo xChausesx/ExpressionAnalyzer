@@ -45,7 +45,7 @@ var optimizer = new ExprOptimizer(expr);
 
 try
 {
-    string optimized = optimizer.Optimize(false);
+    string optimized = optimizer.Optimize(true);
     Console.WriteLine("Оптимізований вираз: " + optimized);
 }
 catch (DivideByZeroException ex)

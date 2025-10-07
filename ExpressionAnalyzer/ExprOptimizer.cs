@@ -28,7 +28,8 @@ namespace ExpressionAnalyzer
 
 				optimizedTokens = SimplifyTokens(tokens);
 
-			}
+                Toss(tokens);
+            }
 
 			return string.Join("", optimizedTokens);
 		}
@@ -219,6 +220,42 @@ namespace ExpressionAnalyzer
 			}
 			while (nestedBracketsAmount > 0);
 		}
+
+		private void Toss(List<string> tokens)
+		{
+			List<string> tossedList = new List<string>();
+            List<string> remainItems = new List<string>();
+
+            bool changed;
+
+            do
+            {
+                changed = false;
+
+                for (int i = 0; i < tokens.Count; i++)
+                {
+                    if (double.TryParse(tokens[i], NumberStyles.Any, CultureInfo.InvariantCulture, out double value)
+                        && (i < 0 || !firstPriorOperators.Contains(tokens[i - 1]))
+                        && !firstPriorOperators.Contains(tokens[i + 1]))
+                    {
+						if (i > 0)
+						{
+							tossedList.Add(tokens[i - 1]);
+                        }
+
+                        tossedList.Add(tokens[i]);
+                        tossedList.Add(tokens[i + 1]);
+
+						i++;
+
+                        break;
+                    }
+
+                    remainItems.Add(tokens[i]);
+                }
+
+            } while (changed);
+        }
 
 		private void RemoveBrackets(List<string> tokens, Dictionary<string, string> bracketSeq, string key, int startIndex, int currentIndex)
 		{
