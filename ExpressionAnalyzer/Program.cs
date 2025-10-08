@@ -40,15 +40,32 @@ string[] testCases =
 
 //string expr = "-3*0+12+0+0*3+a+1*b+24+36+12+36+12*c*d/e-d*f2/cd*(a+2.2*4)";
 
-string expr = "(a+b+5)*2+0*(0/5-(6+3+d))";
-var optimizer = new ExprOptimizer(expr);
+string[] testCases2 =
+			{
+				"a+b*c + k - x - d - e - f/g/h/q",
+			  "a+b+c+d+e+f-d*f*g*c*s",
+			  "0/b/c/v/d/e/g*t-v-b-d-s-e-g",
+			  "a*(b+(c+d)/e)+b*0+5+4-1*n",
+			  "0+b*0+0*a+a*b+1",
+			  "2+3+4+5+6+7+8*s-p",
+			  "(a+b+5)*2+0*(0/5-(6+3+d))"
+			};
 
-try
+foreach(var test in testCases2)
 {
-    string optimized = optimizer.Optimize(true);
-    Console.WriteLine("Оптимізований вираз: " + optimized);
-}
-catch (DivideByZeroException ex)
-{
-    Console.WriteLine("Помилка: " + ex.Message);
+	Console.WriteLine($"Початковий вираз: {test}");
+	var optimizerTest = new ExprOptimizer(test);
+	var treeBuilder = new TreeBuilder(test);
+
+	try
+	{
+		string optimizedTest = optimizerTest.GetOptimizedString(true);
+		var groupedTest = treeBuilder.Build(true);
+		Console.WriteLine("Дистрибутивний вираз: " + optimizedTest);
+		Console.WriteLine("Згрупований вираз: " + groupedTest + "\n");
+	}
+	catch (DivideByZeroException ex)
+	{
+		Console.WriteLine("Помилка: " + ex.Message + "\n");
+	}
 }

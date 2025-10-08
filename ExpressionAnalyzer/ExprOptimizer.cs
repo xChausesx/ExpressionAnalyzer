@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Globalization;
+using System.Linq;
 using System.Text.RegularExpressions;
 
 namespace ExpressionAnalyzer
@@ -16,20 +17,26 @@ namespace ExpressionAnalyzer
 			_expr = expr;
 		}
 
-		public string Optimize(bool isDistributive)
+		public List<string> Optimize(bool isDistributive)
 		{
 			var tokens = Tokenize(_expr);
 
 			var optimizedTokens = SimplifyTokens(tokens);
 
-			if (isDistributive)
-			{
-				SimplifyBrackets(optimizedTokens);
+			SimplifyBrackets(optimizedTokens);
 
-				optimizedTokens = SimplifyTokens(tokens);
+			optimizedTokens = SimplifyTokens(tokens);
 
-                Toss(tokens);
-            }
+			tokens = Toss(tokens);
+
+			optimizedTokens = SimplifyTokens(tokens);
+
+			return optimizedTokens;
+		}
+
+		public string GetOptimizedString(bool isDistributive)
+		{
+			var optimizedTokens = Optimize(isDistributive);
 
 			return string.Join("", optimizedTokens);
 		}
@@ -84,6 +91,23 @@ namespace ExpressionAnalyzer
 					if (tokens[i] == "/" && i + 1 < tokens.Count && tokens[i + 1] == "0")
 						throw new DivideByZeroException($"Ділення на нуль на позиції {i + 1}");
 
+					if (tokens[i] == "0" && i > 0 && (tokens[i - 1] == "+" || tokens[i - 1] == "-") && (i + 2 >= tokens.Count || !firstPriorOperators.Contains(tokens[i + 1])))
+					{
+						tokens[i] = "0";
+						tokens.RemoveAt(i - 1);
+						tokens.RemoveAt(i - 1);
+						changed = true;
+						break;
+					}
+
+					if (tokens[i] == "0" && i + 1 < tokens.Count && tokens[i + 1] == "+" && (i + 1 == tokens.Count || tokens[i + 2] != "("))
+					{
+						tokens.RemoveAt(i);
+						tokens.RemoveAt(i);
+						changed = true;
+						break;
+					}
+
 					if (tokens[i] == "1" && i > 0 && tokens[i - 1] == "*")
 					{
 						tokens[i] = "0";
@@ -126,6 +150,11 @@ namespace ExpressionAnalyzer
 							"/" => value / secondValue,
 							_ => 0,
 						};
+
+						if (resultValue < 0 && tokens[i - 1] == "-")
+						{
+							resultValue = Math.Abs(resultValue);
+						}
 
 						tokens[i] = resultValue.ToString();
 
@@ -221,41 +250,66 @@ namespace ExpressionAnalyzer
 			while (nestedBracketsAmount > 0);
 		}
 
-		private void Toss(List<string> tokens)
+		private List<string> Toss(List<string> tokens)
 		{
 			List<string> tossedList = new List<string>();
             List<string> remainItems = new List<string>();
 
-            bool changed;
+			bool changed = false;
 
-            do
-            {
-                changed = false;
+			for (int i = 0; i < tokens.Count; i++)
+			{
+				if (double.TryParse(tokens[i], NumberStyles.Any, CultureInfo.InvariantCulture, out double value) &&
+					(i == 0 || (!firstPriorOperators.Contains(tokens[i - 1]) && (i >= tokens.Count - 1 || !firstPriorOperators.Contains(tokens[i + 1])))))
+				{
+					if (i > 0)
+					{
+						tossedList.Add(tokens[i - 1]);
+					}
 
-                for (int i = 0; i < tokens.Count; i++)
-                {
-                    if (double.TryParse(tokens[i], NumberStyles.Any, CultureInfo.InvariantCulture, out double value)
-                        && (i < 0 || !firstPriorOperators.Contains(tokens[i - 1]))
-                        && !firstPriorOperators.Contains(tokens[i + 1]))
-                    {
-						if (i > 0)
-						{
-							tossedList.Add(tokens[i - 1]);
-                        }
+					tossedList.Add(tokens[i]);
 
-                        tossedList.Add(tokens[i]);
-                        tossedList.Add(tokens[i + 1]);
+					changed = true;
 
+/*					if (i < tokens.Count - 1 && tokens[i + 1] == "+")
+					{
 						i++;
+					}*/
+				}
+				else
+				{
+					if (changed)
+					{
+						if (remainItems.Any())
+						{
+							remainItems.RemoveAt(remainItems.Count - 1);
+						}
+						changed = false;
+					}
 
-                        break;
-                    }
+					remainItems.Add(tokens[i]);
+				}
+			}
 
-                    remainItems.Add(tokens[i]);
-                }
+			if (remainItems.Any() && !operators.Contains(remainItems.Last()) && tossedList.Any() && !operators.Contains(tossedList.First()))
+			{
+				remainItems.Add("+");
+			}
 
-            } while (changed);
-        }
+			if (remainItems.Any() && remainItems[0] == "+")
+			{
+				remainItems.RemoveAt(0);
+			}
+
+			if (remainItems.Any() && tossedList.Any() && remainItems.Last() == tossedList.First())
+			{
+				tossedList.RemoveAt(0);
+			}
+
+			remainItems.AddRange(tossedList);
+
+			return remainItems;
+		}
 
 		private void RemoveBrackets(List<string> tokens, Dictionary<string, string> bracketSeq, string key, int startIndex, int currentIndex)
 		{
