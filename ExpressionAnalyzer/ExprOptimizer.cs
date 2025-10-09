@@ -43,7 +43,8 @@ namespace ExpressionAnalyzer
 
 		private List<string> Tokenize(string expr)
 		{
-			var pattern = @"(?<=^)-\d+(\.\d+)?|\d+(\.\d+)?|[a-zA-Z_]\w*|[\+\-\*/\(\)]";
+			expr = expr.Replace(",", ".");
+			var pattern = @"(?<=^)-\d+(\.\d+)?[a-zA-Z_]\w*?|\d+(\.\d+)?[a-zA-Z_]\w*?|\d+(\.\d+)?|[a-zA-Z_]\w*|[\+\-\*/\(\)]";
 			var matches = Regex.Matches(expr, pattern);
 			var tokens = new List<string>();
 			foreach (Match m in matches)
@@ -203,7 +204,7 @@ namespace ExpressionAnalyzer
 						else if (!string.IsNullOrEmpty(key))
 						{
 							RemoveBrackets(tokens, bracketSeq, key, indexOfFirstBracket, i);
-							i-= 2;
+							i = 0;
 							key = "";
 							inBrack = false;
 						}
@@ -377,6 +378,12 @@ namespace ExpressionAnalyzer
 
 			tokens.RemoveRange(startIndex, count + 2);
 
+			if (tokens.Last() == "/")
+			{
+				resultValue.Insert(0, "(");
+				resultValue.Insert(resultValue.Count, ")");
+			}
+
 			tokens.InsertRange(startIndex, resultValue);
 		}
 
@@ -420,8 +427,18 @@ namespace ExpressionAnalyzer
 			{
 				if (!operators.Contains(sequence[i]) && sequence[i] != "(" && sequence[i] != ")")
 				{
-					sequence.Insert(i, keyVaue);
 					sequence.Insert(i, "/");
+					sequence.Insert(i, keyVaue);
+
+					int nextPlus = sequence.IndexOf("+", i + 1);
+					int nextMinus = sequence.IndexOf("-", i + 1);
+
+					int nextIndex;
+					if (nextPlus == -1) nextIndex = nextMinus;
+					else if (nextMinus == -1) nextIndex = nextPlus;
+					else nextIndex = Math.Min(nextPlus, nextMinus);
+
+					i = nextIndex != -1 ? nextIndex : sequence.Count;
 				}
 			}
 

@@ -14,12 +14,5 @@ public class TreeNode
 	public TreeNode(string value)
 	{
 		Value = value;
-		Left = null;
-		Right = null;
-	}
-
-	public bool IsOperator()
-	{
-		return Value == "+" || Value == "-" || Value == "*" || Value == "/";
 	}
 }

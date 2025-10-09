@@ -1,5 +1,7 @@
 ﻿using ExpressionAnalyzer.Models;
+using System.ComponentModel.Design;
 using System.Text.RegularExpressions;
+using System.Xml.Linq;
 
 namespace ExpressionAnalyzer
 {
@@ -8,6 +10,7 @@ namespace ExpressionAnalyzer
 		private string _expr;
 		private string[] firstPriorOperators = { "*", "/" };
 		private string[] secondPriorOperators = { "+", "-" };
+		private string[] operators = { "+", "-", "*", "/" };
 		public TreeNode Root { get; private set; }
 
 		public TreeBuilder(string expr)
@@ -15,7 +18,7 @@ namespace ExpressionAnalyzer
 			_expr = expr;
 		}
 
-		public string Build(bool isDistributive)
+		public (string, string) Build(bool isDistributive)
 		{
 			var optimizer = new ExprOptimizer(_expr);
 			var optimizedList = optimizer.Optimize(isDistributive);
@@ -24,7 +27,9 @@ namespace ExpressionAnalyzer
 
 			var result = MakeBrackets(optimizedList);
 
-			return result;
+			BuildTreeFromTokens(result);
+
+			return (optimizedExp, result);
 		}
 
 		public string MakeBrackets(List<string> tokens)
@@ -56,6 +61,8 @@ namespace ExpressionAnalyzer
 					}
 					if (i + 1 < tokens.Count && tokens[i] == "/")
 					{
+						tokens[i + 1] = tokens[i + 1].Replace("/", "*");
+
 						tokens[i] = "(" + tokens[i - 1] + tokens[i] + tokens[i + 1] + ")";
 
 						tokens.RemoveAt(i + 1);
@@ -92,11 +99,52 @@ namespace ExpressionAnalyzer
 			return string.Join("", tokens);
 		}
 
-		private TreeNode BuildTreeFromTokens(List<string> tokens)
+		private void BuildTreeFromTokens(string expr)
 		{
-			Stack<TreeNode> nodeStack = new Stack<TreeNode>();
+			Root = new TreeNode(expr);
+			var pattern = @"\((?>[^()]+|(?<open>\()|(?<-open>\)))*(?(open)(?!))\)"
+						 + @"|(?:(?<=^|[\(\+\-\*/])-\s*(?:\d+(?:\.\d+)?|[a-zA-Z_]\w*))"
+						 + @"|\d+(?:\.\d+)?"
+						 + @"|[a-zA-Z_]\w*"
+						 + @"|[\+\-\*/]";
 
-			return null;
+			var res = new List<string>();
+
+			void Dfs(TreeNode n)
+			{
+				if (n == null) return;
+				if (n.Value.StartsWith('(') && n.Value.EndsWith(')'))
+				{
+					n.Value = n.Value.Remove(n.Value.Length - 1, 1).Remove(0, 1);
+					var matches = Regex.Matches(n.Value, pattern);
+
+					for (int i = 0; i < matches.Count; i++) 
+					{
+						if (operators.Any(x => x == matches[i].Value))
+						{
+							n.Value = matches[i].Value;
+							n.Left = new TreeNode(matches[i - 1].Value);
+
+							if (matches[i].Value == "-")
+							{
+								n.Right = new TreeNode(matches[i + 1].Value.Replace("+", "§").Replace("-", "+").Replace("§", "-"));
+							}
+							else if (matches[i].Value == "/")
+							{
+								n.Right = new TreeNode(matches[i + 1].Value.Replace("*", "/"));
+							}
+							else
+							{
+								n.Right = new TreeNode(matches[i + 1].Value);
+							}
+						}
+					}
+				}
+				Dfs(n.Left);
+				Dfs(n.Right);
+			}
+
+			Dfs(Root);
 		}
 
 		public void PrintTree(TreeNode node = null, string indent = "", bool isLeft = true)
