@@ -13,9 +13,11 @@ string[] testCases =
 			  "0+b*0+0*a+a*b+1",
 			  "2+3+4+5+6+7+8*s-p",
 			  "(a+b+5)*2+0*(0/5-(6+3+d))",
+			  "a*(b+c-1)*d",
+			  "(a-c)*(b-k+1)"
 			};
 
-foreach(var test in testCases)
+foreach (var test in testCases)
 {
 	Console.WriteLine($"Початковий вираз: {test}");
 	var analyzer = new Analyzer(test);
@@ -31,6 +33,10 @@ foreach(var test in testCases)
 			var groupedTest = treeBuilder.Build(true);
 			Console.WriteLine("Дистрибутивний вираз: " + groupedTest.Item1);
 			Console.WriteLine("Згрупований вираз: " + groupedTest.Item2 + "\n");
+			var modeler = new MatrixSystemModeler();
+			var resulttt = modeler.Simulate(treeBuilder.Root);
+			resulttt.PrintMetrics();
+			resulttt.PrintGanttChart();
 			treeBuilder.PrintTree();
 			Console.WriteLine("\n\n");
 		}

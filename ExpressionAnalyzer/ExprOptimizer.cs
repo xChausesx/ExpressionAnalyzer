@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Data.SqlTypes;
 using System.Globalization;
 using System.Linq;
 using System.Text.RegularExpressions;
@@ -23,9 +24,9 @@ namespace ExpressionAnalyzer
 
 			var optimizedTokens = SimplifyTokens(tokens);
 
-			SimplifyBrackets(optimizedTokens);
+			tokens = SimplifyBrackets(optimizedTokens);
 
-			optimizedTokens = SimplifyTokens(tokens);
+			//optimizedTokens = SimplifyTokens(tokens);
 
 			tokens = Toss(tokens);
 
@@ -181,7 +182,7 @@ namespace ExpressionAnalyzer
 			return tokens;
 		}
 
-		private void SimplifyBrackets(List<string> tokens)
+		private List<string> SimplifyBrackets(List<string> tokens)
 		{
 			var bracketSeq = new Dictionary<string, string>();
 			bool inBrack = false;
@@ -201,12 +202,22 @@ namespace ExpressionAnalyzer
 						{
 							nestedBracketsCount--;
 						}
-						else if (!string.IsNullOrEmpty(key))
+						else if (!string.IsNullOrEmpty(key) && (i >= tokens.Count - 2  || !firstPriorOperators.Contains(tokens[i + 1]) || tokens[i + 2] != "("))
 						{
 							RemoveBrackets(tokens, bracketSeq, key, indexOfFirstBracket, i);
 							i = 0;
 							key = "";
 							inBrack = false;
+						}
+						else
+						{
+							var newKey = "(" + bracketSeq[key] + ")" + tokens[i + 1];
+							bracketSeq.Remove(key);
+							bracketSeq.Add(newKey, "");
+							key = newKey;
+							indexOfFirstBracket = i + 2;
+							nestedBracketsAmount++;
+							i+=3;
 						}
 					}
 
@@ -246,9 +257,15 @@ namespace ExpressionAnalyzer
 					}
 				}
 
+				var expr = string.Join("", tokens);
+
+				tokens = Tokenize(expr);
+
 				nestedBracketsAmount--;
 			}
 			while (nestedBracketsAmount > 0);
+
+			return tokens;
 		}
 
 		private List<string> Toss(List<string> tokens)
@@ -335,9 +352,9 @@ namespace ExpressionAnalyzer
 
 			if (firstPriorOperators.Contains(op.ToString()))
 			{
-				startIndex-=2;
+				startIndex-=key.Length;
 
-				count+=2;
+				count+=key.Length;
 			}
 
 			if (currentIndex < tokens.Count - 1 && firstPriorOperators.Contains(tokens[currentIndex + 1]))
@@ -348,6 +365,7 @@ namespace ExpressionAnalyzer
 				{
 					seqAfterDiv += tokens[currentIndex];
 					currentIndex++;
+					if (currentIndex == tokens.Count) break;
 				}
 
 				for (int i = 0; i < resultValue.Count; i++)
@@ -378,7 +396,7 @@ namespace ExpressionAnalyzer
 
 			tokens.RemoveRange(startIndex, count + 2);
 
-			if (tokens.Last() == "/")
+			if (tokens.Any() && tokens.Last() == "/")
 			{
 				resultValue.Insert(0, "(");
 				resultValue.Insert(resultValue.Count, ")");
@@ -393,9 +411,15 @@ namespace ExpressionAnalyzer
 		{
 			for (int i = 0; i < sequence.Count; i++)
 			{
-				if (!operators.Contains(sequence[i]) && sequence[i] != "(" && sequence[i] != ")")
+				if (!operators.Contains(sequence[i]) && sequence[i] != "(" && sequence[i] != ")" && i != 0)
 				{
-					sequence[i] = "-" + sequence[i];
+					var seq = sequence[i - 1];
+					sequence[i - 1] = sequence[i - 1] == "+" ? sequence[i - 1] = "-" : (sequence[i - 1] == "-" ? sequence[i - 1] = "+" : sequence[i - 1]);
+
+					if(seq == sequence[i - 1])
+					{
+						sequence[i] = "-" + sequence[i];
+					}
 				}
 			}
 

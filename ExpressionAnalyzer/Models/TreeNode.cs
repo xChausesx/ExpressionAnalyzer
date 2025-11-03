@@ -15,4 +15,21 @@ public class TreeNode
 	{
 		Value = value;
 	}
+
+	public TreeNode(string value, TreeNode? left = null, TreeNode? right = null)
+	{
+		Value = value;
+		Left = left;
+		Right = right;
+	}
+
+	/// <summary>
+	/// Перевіряє, чи є вузол операцією
+	/// </summary>
+	public bool IsOperation() => "+-*/".Contains(Value);
+
+	/// <summary>
+	/// Перевіряє, чи є вузол операндом (листом)
+	/// </summary>
+	public bool IsOperand() => !IsOperation() && Left == null && Right == null;
 }
