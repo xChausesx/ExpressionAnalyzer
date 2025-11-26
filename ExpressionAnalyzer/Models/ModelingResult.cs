@@ -1,14 +1,11 @@
 ﻿using ExpressionAnalyzer.Models;
 
-/// <summary>
-/// Зберігає всі розраховані метрики (Крок 6)
-/// </summary>
 public class ModelingResult
 {
 	public double SequentialTime { get; set; }
 	public double ParallelTime { get; set; }
 	public double Speedup { get; set; }
-	public int ActiveProcessors { get; set; } // "Ідеальна" кількість
+	public int ActiveProcessors { get; set; } 
 	public int TotalProcessors { get; set; }
 	public double EfficiencyActive { get; set; }
 	public double EfficiencyTotal { get; set; }
@@ -35,12 +32,10 @@ public class ModelingResult
 			int lastEnd = 0;
 			foreach (var task in GanttChart[i].OrderBy(t => t.StartTime))
 			{
-				// Додаємо час простою
 				if (task.StartTime > lastEnd)
 				{
 					Console.Write($"[ {new string('-', task.StartTime - lastEnd)} ]");
 				}
-				// Додаємо саму задачу
 				Console.Write($"[ {task.Name} ({task.EndTime - task.StartTime}) ]");
 				lastEnd = task.EndTime;
 			}

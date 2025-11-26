@@ -6,15 +6,10 @@ Console.InputEncoding = Encoding.UTF8;
 
 string[] testCases =
 			{
-			  "a+b*c + k - x - d - e - f/g/h/q",
-			  "a+b+c+d+e+f-d*f*g*c*s",
-			  "0/b/c/v/d/e/g*t-v-b-d-s-e-g",
-			  "a*(b+(c+d)/e)+b*0+5+4-1*n",
-			  "0+b*0+0*a+a*b+1",
-			  "2+3+4+5+6+7+8*s-p",
-			  "(a+b+5)*2+0*(0/5-(6+3+d))",
-			  "a*(b+c-1)*d",
-			  "(a-c)*(b-k+1)"
+			  "a+b+c+d+e+f+g+h",
+			  "a+b/c+d/e+f/g/h+g*k+d*t",
+			  "a/b/c/d/e/f/g/h",
+			  "a+b+c+d+e+f+g+h+i+j+k+l+m*n+o+p+q+a+a+t+u+v+w+x+y+z"
 			};
 
 foreach (var test in testCases)
